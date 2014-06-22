@@ -1,0 +1,64 @@
+# 4. Across the United States, how have emissions from coal
+#combustion-related sources changed from 1999–2008?
+
+#set the working directory to be the Course Project folder
+setwd("~/Desktop/Online/OWinter Term 2014/Exploratory Data Analysis/Course Projects/Course Project 2")
+
+## This first line will likely take a few seconds. Be patient!
+NEI <- readRDS("./exdata-data-NEI_data/summarySCC_PM25.rds")
+SCC <- readRDS("./exdata-data-NEI_data/Source_Classification_Code.rds")
+
+#class(NEI) # => data.frame
+#class(SCC) # => data.frame
+#class(NEI$year) # => "integer"
+#class(SCC$Short.Name) # => "factor"
+
+#initialize the sources vector where we will store all the sources related
+#to coal (coal combustion)
+sources <- vector(mode="character")
+
+#counter variable
+#i <- 0
+for (row in seq(SCC$Short.Name)) {
+        #i <- i+1
+        #print(i)
+        name <- SCC$Short.Name[row]
+        #determine if the name has the word 'coal' in it
+        coal <- grepl("coal", tolower(name))
+        sourceNumber <- as.character(SCC$SCC[row])
+        #if name has the word 'coal' in it and if the sourceNumber is not
+        #already in the sources vector, append it to sources
+        if (coal & !(sourceNumber %in% sources)) {
+                sources <- append(sources, sourceNumber)
+        }
+}
+
+#initialize the years and emissions vectors to make a data frame
+years <- c(1999, 2002, 2005, 2008)
+emissions <- c(0, 0, 0, 0)
+
+totalEmission <- data.frame(years, emissions)
+
+#determine the total emissions from coal combustion-related sources for
+#each of the 4 years and input it into the totalEmission data frame
+for (idx in seq(years)) {
+        #i <- 0
+        subset <- NEI[(NEI$year==years[idx]), ]
+        for (sourceID in sources) {
+                #i <- i+1
+                #print(i)
+                data <- subset[(subset$SCC==sourceID), ]
+                totalEmission[idx, 2] <- totalEmission[idx, 2] + sum(data$Emissions)
+        }
+}
+
+#set the margin
+par(mar=c(5,4,4,1))
+
+plot(totalEmission$years, totalEmission$emissions, type="o",
+     xlab="Years", ylab="Amount of PM2.5 emitted (in tons)",
+     main="Trend in emissions from coal combustion\n related sources from 1999–2008",
+     col="Blue")
+
+dev.copy(png, file="plot4.png")
+dev.off()
